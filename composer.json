@@ -3,7 +3,7 @@
     "description": "PHP class to re-size and scale images",
     "keywords": ["php", "image", "resize","scale"],
     "type": "library",
-    "homepage": "https://github.com/gumlet/php-image-resize",
+    "homepage": "https://github.com/platoniusen/php-image-resize",
     "license": "MIT",
     "authors": [
         {
