@@ -1,5 +1,5 @@
 {
-    "name": "gumlet/php-image-resize",
+    "name": "platoniusen/php-image-resize",
     "description": "PHP class to re-size and scale images",
     "keywords": ["php", "image", "resize","scale"],
     "type": "library",
