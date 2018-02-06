@@ -48,6 +48,7 @@ class ImageResize
     protected $source_info;
 
     protected $filters = [];
+    protected $tempFile;
 
     /**
      * Create instance from a string.
@@ -126,6 +127,7 @@ class ImageResize
                 $filename = 'data://application/octet-stream;base64,' . base64_encode($filename);
             } else {
                 $temp = tempnam(sys_get_temp_dir(),'image_resize-');
+                $this->tempFile = $temp;
 
                 if ($temp === false) {
                     throw new \Exception('Failed to create a temp file.');
@@ -747,6 +749,14 @@ class ImageResize
      */
     private function _createFromDataUrl($finfo, $url) {
         return finfo_file($finfo, $url);
+    }
+
+    public function __destruct()
+    {
+        // Cleanup.
+        if (is_string($this->tempFile)) {
+            @unlink($this->tempFile);
+        }
     }
 }
 
