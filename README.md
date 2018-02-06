@@ -1,16 +1,5 @@
-php-image-resize
-================
+## NOTE: This is a fork of gumlet/php-image-resize, which includes a work around for the php configuration 'allow_url_fopen' = 0
 
-PHP library to resize, scale and crop images.
-
-[![Build Status](https://travis-ci.org/gumlet/php-image-resize.svg?branch=master)](https://travis-ci.org/gumlet/php-image-resize) [![Latest Stable Version](https://poser.pugx.org/gumlet/php-image-resize/v/stable)](https://packagist.org/packages/gumlet/php-image-resize) [![Monthly Downloads](https://poser.pugx.org/gumlet/php-image-resize/d/monthly)](https://packagist.org/packages/gumlet/php-image-resize)
-
-Hosted Solution
----------------
-
-If you don't want to crop, resize and store images on your server, <a href="https://www.gumlet.com" target="_blank">Gumlet.com</a> is a **free** service which can process images in real-time and serve worldwide through CDN.
-
-------------------
 
 Setup
 -----
@@ -22,7 +11,7 @@ If using [Composer](https://getcomposer.org/), in your `composer.json` file add:
 ```json
 {
     "require": {
-        "gumlet/php-image-resize": "1.7.*"
+        "platoniusen/php-image-resize": "1.7.*"
     }
 }
 ```
@@ -347,9 +336,3 @@ https://gumlet.github.io/php-image-resize/index.html
 
 ------------------
 
-Maintainer
-----------
-
-This library is maintained by <a href="https://www.gumlet.com" target="_blank">Gumlet.com</a>
-
-[<img src="https://www.gumlet.com/public/img/logo.png" width="300px">](https://www.gumlet.com)
