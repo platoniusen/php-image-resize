@@ -15,6 +15,10 @@ class ImageResize
     const CROPRIGHT = 5;
     const CROPTOPCENTER = 6;
 
+    const TYPE_FILE_PATH = 'file_path'; // i.e: my_file.jpg
+    const TYPE_DATA_URL = 'data_url'; // i.e: data://...
+    const TYPE_FILE_CONTENT = 'file_content'; // i.e the returned value of "file_get_content('my_file.jpg')"
+
     public $quality_jpg = 85;
     public $quality_webp = 85;
     public $quality_png = 6;
@@ -43,11 +47,13 @@ class ImageResize
 
     protected $source_info;
 
-
     protected $filters = [];
 
     /**
-     * Create instance from a strng
+     * Create instance from a string.
+     *
+     * - Throws with message 'Unsupported file type' if not a file.
+     * - Throws with message 'Unsupported image type' if unsupported file.
      *
      * @param string $image_data
      * @return ImageResize
@@ -55,13 +61,17 @@ class ImageResize
      */
     public static function createFromString($image_data)
     {
-        if (empty($image_data) || $image_data === null) {
+        $isDataUrl = strpos($image_data, 'data://') === 0;
+
+        if (($isDataUrl && strlen($image_data) < 8) ||
+        ($isDataUrl === false && (empty($image_data) || $image_data === null))) {
             throw new ImageResizeException('image_data must not be empty');
         }
-        $resize = new self('data://application/octet-stream;base64,' . base64_encode($image_data));
+
+        $resize = new self($image_data, $isDataUrl ? self::TYPE_DATA_URL : self::TYPE_FILE_CONTENT);
+
         return $resize;
     }
-
 
     /**
      * Add filter function for use right before save image to file.
@@ -91,21 +101,39 @@ class ImageResize
      * Loads image source and its properties to the instanciated object
      *
      * @param string $filename
-     * @return ImageResize
+     * @param string $type
+     *
      * @throws ImageResizeException
      */
-    public function __construct($filename)
+    public function __construct($filename, $type = self::TYPE_FILE_PATH)
     {
         if (!defined('IMAGETYPE_WEBP')) {
             define('IMAGETYPE_WEBP', 18);
         }
-        if ($filename === null || empty($filename) || (substr($filename, 0, 7) !== 'data://' && !is_file($filename))) {
+
+        if ($filename === null || empty($filename) || (substr($filename, 0, 7) !== 'data://' && $type === self::TYPE_DATA_URL)) {
             throw new ImageResizeException('File does not exist');
         }
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if (strstr(finfo_file($finfo, $filename), 'image') === false) {
+        $mimeType = $this->getMimeType($filename, $type);
+
+        if (strpos($mimeType, 'image/') !== 0) {
             throw new ImageResizeException('Unsupported file type');
+        }
+
+        if ($type === self::TYPE_FILE_CONTENT) {
+            if (ini_get('allow_url_fopen')) {
+                $filename = 'data://application/octet-stream;base64,' . base64_encode($filename);
+            } else {
+                $temp = tempnam(sys_get_temp_dir(),'image_resize-');
+
+                if ($temp === false) {
+                    throw new \Exception('Failed to create a temp file.');
+                }
+
+                file_put_contents($temp, $filename);
+                $filename = $temp;
+            }
         }
 
         if (!$image_info = getimagesize($filename, $this->source_info)) {
@@ -658,6 +686,68 @@ class ImageResize
         }
         return $size;
     }
+
+    /**
+     *
+     * @param        $data
+     * @param string $type
+     *
+     * @return bool|string
+     */
+    protected function getMimeType($data, string $type = self::TYPE_FILE_PATH) {
+        /* @var $finfo \finfo|resource */
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $response = false;
+
+        if ($type === self::TYPE_FILE_PATH) {
+            $response = $this->_createFromFilePath($finfo, $data);
+        }
+
+        if ($type === self::TYPE_DATA_URL) {
+            $response = $this->_createFromDataUrl($finfo, $data);
+        }
+
+        if ($type === self::TYPE_FILE_CONTENT) {
+            $response = $this->_createFromFileContent($finfo, $data);
+        }
+
+        finfo_close($finfo);
+
+        return $response;
+    }
+
+    /**
+     * @param $finfo
+     * @param        $filename
+     *
+     * @return string
+     * @throws ImageResizeException
+     */
+    private function _createFromFilePath($finfo, $filename) {
+        return finfo_file($finfo, $filename);
+    }
+
+    /**
+     * @param $finfo
+     * @param        $content
+     *
+     * @return string
+     * @throws ImageResizeException
+     */
+    private function _createFromFileContent($finfo, $content) {
+        return finfo_buffer($finfo, $content);
+    }
+
+    /**
+     * @param $finfo
+     * @param        $url
+     *
+     * @return string
+     * @throws ImageResizeException
+     */
+    private function _createFromDataUrl($finfo, $url) {
+        return finfo_file($finfo, $url);
+    }
 }
 
 // imageflip definition for PHP < 5.5
@@ -706,11 +796,4 @@ default: {
         }
         imagedestroy($temp_image);
     }
-}
-
-/**
- * PHP Exception used in the ImageResize class
- */
-class ImageResizeException extends \Exception
-{
 }

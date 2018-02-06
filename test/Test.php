@@ -1,6 +1,7 @@
 <?php
 
 include __DIR__.'/../lib/ImageResize.php';
+include __DIR__.'/../lib/ImageResizeException.php';
 
 use \Gumlet\ImageResize;
 use \Gumlet\ImageResizeException;
@@ -43,7 +44,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(IMAGETYPE_JPEG, $resize->source_type);
         $this->assertInstanceOf('\Gumlet\ImageResize', $resize);
     }
-    
+
     public function testLoadIgnoreXmpExifJpg()
     {
         $image = __DIR__.'/ressources/test_xmp.jpg';
@@ -64,6 +65,11 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
 
     public function testLoadString()
     {
+        if (ini_get('allow_url_fopen') === false) {
+            $this->markSkipped();
+            return;
+        }
+
         $resize = ImageResize::createFromString(base64_decode($this->image_string));
 
         $this->assertEquals(IMAGETYPE_GIF, $resize->source_type);
@@ -98,6 +104,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
      */
     public function testLoadUnsupportedFileString()
     {
+        ImageResize::createFromString('data://');
         ImageResize::createFromString('');
     }
 
@@ -124,7 +131,6 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
     {
         ImageResize::createFromString(base64_decode($this->unsupported_image));
     }
-
 
     /**
      * Resize tests
@@ -476,26 +482,26 @@ class ImageResizeExceptionTest extends PHPUnit_Framework_TestCase
     public function testExceptionEmpty()
     {
         $e = new ImageResizeException();
-    
+
         $this->assertEquals("", $e->getMessage());
         $this->assertInstanceOf('\Gumlet\ImageResizeException', $e);
     }
-    
+
     public function testExceptionMessage()
     {
         $e = new ImageResizeException("General error");
-    
+
         $this->assertEquals("General error", $e->getMessage());
         $this->assertInstanceOf('\Gumlet\ImageResizeException', $e);
     }
-    
+
     public function testExceptionExtending()
     {
         $e = new ImageResizeException("General error");
-        
+
         $this->assertInstanceOf('\Exception', $e);
     }
-    
+
     public function testExceptionThrown()
     {
         try{
